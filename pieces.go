@@ -2,12 +2,6 @@ package main
 
 type PieceType int
 
-type Color int
-
-const (
-	White Color = iota
-	Black
-)
 const (
 	PAWN PieceType = iota
 	KNIGHT
@@ -21,7 +15,7 @@ type Piece interface {
 	Color() Color
 	Type() PieceType
 	Symbol() string
-	LegalMoves(board *Board, row, column int) [][2]int
+	LegalMoves(game *Game, row, column int) []Move
 }
 type Pawn struct {
 	color Color
@@ -40,9 +34,9 @@ func (p Pawn) Symbol() string {
 	return "♙"
 }
 
-func (p Pawn) LegalMoves(board *Board, row, column int) [][2]int {
+func (p Pawn) LegalMoves(game *Game, row, column int) []Move {
 	//TODO
-	return make([][2]int, 0)
+	return make([]Move, 0)
 }
 
 type Knight struct {
@@ -61,9 +55,9 @@ func (k Knight) Symbol() string {
 	}
 	return "♘"
 }
-func (k Knight) LegalMoves(board *Board, row, column int) [][2]int {
+func (k Knight) LegalMoves(game *Game, row, column int) []Move {
 	//TODO
-	return make([][2]int, 0)
+	return make([]Move, 0)
 }
 
 type Bishop struct {
@@ -83,9 +77,9 @@ func (b Bishop) Symbol() string {
 	return "♗"
 }
 
-func (b Bishop) LegalMoves(board *Board, row, column int) [][2]int {
+func (b Bishop) LegalMoves(game *Game, row, column int) []Move {
 	//TODO
-	return make([][2]int, 0)
+	return make([]Move, 0)
 }
 
 type Rook struct {
@@ -104,9 +98,9 @@ func (r Rook) Symbol() string {
 	}
 	return "♖"
 }
-func (r Rook) LegalMoves(board *Board, row, column int) [][2]int {
+func (r Rook) LegalMoves(game *Game, row, column int) []Move {
 	//TODO
-	return make([][2]int, 0)
+	return make([]Move, 0)
 }
 
 type Queen struct {
@@ -126,9 +120,9 @@ func (q Queen) Symbol() string {
 	return "♕"
 }
 
-func (q Queen) LegalMoves(board *Board, row, column int) [][2]int {
+func (q Queen) LegalMoves(game *Game, row, column int) []Move {
 	//TODO
-	return make([][2]int, 0)
+	return make([]Move, 0)
 }
 
 type King struct {
@@ -147,7 +141,7 @@ func (k King) Symbol() string {
 	}
 	return "♔"
 }
-func (k King) LegalMoves(board *Board, row, column int) [][2]int {
+func (k King) LegalMoves(game *Game, row, column int) []Move {
 	//TODO
-	return make([][2]int, 0)
+	return make([]Move, 0)
 }

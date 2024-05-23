@@ -22,18 +22,87 @@ const (
 	columnH
 )
 
-type Tile struct {
-	Piece Piece
+type Square [2]int
+
+func (s Square) toString() string {
+	return string('a'+s[1]) + string('1'+s[0])
+}
+func newSquare(name string) *Square {
+	if len(name) != 2 {
+		return nil
+	}
+	if !('a' <= name[0] && name[0] <= 'h' && '1' <= name[1] && name[1] <= '8') {
+		return nil
+	}
+	square := new(Square)
+	square[0] = int(name[1] - '1')
+	square[1] = int(name[0] - 'a')
+	return square
+
 }
 
-type Board struct {
-	tiles [8][8]Tile
+type Color int
+
+const (
+	White Color = iota
+	Black
+)
+
+type Move struct {
+	From *Square
+	To   *Square
 }
 
-func (b Board) print() {
+func (m Move) toString() string {
+	return m.From.toString() + m.To.toString()
+}
+
+func newMove(start string, end string) *Move {
+	move := new(Move)
+	move.From = newSquare(start)
+	move.To = newSquare(end)
+	if move.From == nil || move.To == nil {
+		return nil
+	}
+	return move
+}
+
+type Game struct {
+	board  [8][8]Piece
+	toPlay Color
+}
+
+func (g *Game) isLegal(move *Move) bool {
+	if move == nil {
+		return false
+	}
+	piece := g.board[move.From[0]][move.From[1]]
+	if piece != nil && piece.Color() == g.toPlay {
+		return true
+	}
+	return false
+}
+func (g *Game) switchPlayer() {
+	g.toPlay = 1 - g.toPlay
+}
+
+func (g *Game) play(move *Move) *Game {
+	if move == nil {
+		return g
+	}
+	if !g.isLegal(move) {
+		return g
+	}
+	g.board[move.To[0]][move.To[1]] = g.board[move.From[0]][move.From[1]]
+	g.board[move.From[0]][move.From[1]] = nil
+	g.switchPlayer()
+	return g
+}
+func (g *Game) printBoard() {
 	for row := row8; row >= row1; row-- {
 		for column := columnA; column <= columnH; column++ {
-			if piece := b.tiles[row][column].Piece; piece == nil {
+			piece := g.board[row][column]
+			if piece == nil {
 				print(" ")
 			} else {
 				print(piece.Symbol())
@@ -44,34 +113,34 @@ func (b Board) print() {
 	}
 }
 
-func newBoard() Board {
-	var board Board
-	board.tiles[row1][columnA].Piece = &Rook{White}
-	board.tiles[row1][columnB].Piece = &Knight{White}
-	board.tiles[row1][columnC].Piece = &Bishop{White}
-	board.tiles[row1][columnD].Piece = &Queen{White}
-	board.tiles[row1][columnE].Piece = &King{White}
-	board.tiles[row1][columnF].Piece = &Bishop{White}
-	board.tiles[row1][columnG].Piece = &Knight{White}
-	board.tiles[row1][columnH].Piece = &Rook{White}
+func newGame() *Game {
+	var game = new(Game)
+	game.board[row1][columnA] = &Rook{White}
+	game.board[row1][columnB] = &Knight{White}
+	game.board[row1][columnC] = &Bishop{White}
+	game.board[row1][columnD] = &Queen{White}
+	game.board[row1][columnE] = &King{White}
+	game.board[row1][columnF] = &Bishop{White}
+	game.board[row1][columnG] = &Knight{White}
+	game.board[row1][columnH] = &Rook{White}
 	for column := columnA; column <= columnH; column++ {
-		board.tiles[row2][column].Piece = &Pawn{White}
+		game.board[row2][column] = &Pawn{White}
 	}
-	for column := columnA; column < columnH; column++ {
-		board.tiles[row7][column].Piece = &Pawn{Black}
+	for column := columnA; column <= columnH; column++ {
+		game.board[row7][column] = &Pawn{Black}
 	}
-	board.tiles[row8][columnA].Piece = &Rook{Black}
-	board.tiles[row8][columnB].Piece = &Knight{Black}
-	board.tiles[row8][columnC].Piece = &Bishop{Black}
-	board.tiles[row8][columnD].Piece = &Queen{Black}
-	board.tiles[row8][columnE].Piece = &King{Black}
-	board.tiles[row8][columnF].Piece = &Bishop{Black}
-	board.tiles[row8][columnG].Piece = &Knight{Black}
-	board.tiles[row8][columnH].Piece = &Rook{Black}
-	return board
+	game.board[row8][columnA] = &Rook{Black}
+	game.board[row8][columnB] = &Knight{Black}
+	game.board[row8][columnC] = &Bishop{Black}
+	game.board[row8][columnD] = &Queen{Black}
+	game.board[row8][columnE] = &King{Black}
+	game.board[row8][columnF] = &Bishop{Black}
+	game.board[row8][columnG] = &Knight{Black}
+	game.board[row8][columnH] = &Rook{Black}
+	return game
 }
 
 func main() {
-	board := newBoard()
-	board.print()
+	game := newGame()
+	game.play(newMove("e2", "e4")).printBoard()
 }
