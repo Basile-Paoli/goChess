@@ -22,6 +22,7 @@ const (
 	columnH
 )
 
+// Square represents a square on the chess board where the first element is the row and the second element is the column.
 type Square [2]int
 
 func (s Square) toString() string {
@@ -77,8 +78,13 @@ func (g *Game) isLegal(move *Move) bool {
 		return false
 	}
 	piece := g.board[move.From[0]][move.From[1]]
-	if piece != nil && piece.Color() == g.toPlay {
-		return true
+	if piece == nil || piece.Color() != g.toPlay {
+		return false
+	}
+	for _, legalMove := range piece.LegalMoves(g, move.From) {
+		if legalMove.toString() == move.toString() {
+			return true
+		}
 	}
 	return false
 }
@@ -98,6 +104,21 @@ func (g *Game) play(move *Move) *Game {
 	g.switchPlayer()
 	return g
 }
+func (g *Game) move(moveStr string) *Game {
+	if len(moveStr) != 4 {
+		return g
+	}
+	return g.play(newMove(moveStr[:2], moveStr[2:]))
+}
+
+func (g *Game) legalMovesFrom(square *Square) []Move {
+	piece := g.board[square[0]][square[1]]
+	if piece == nil {
+		return make([]Move, 0)
+	}
+	return piece.LegalMoves(g, square)
+}
+
 func (g *Game) printBoard() {
 	for row := row8; row >= row1; row-- {
 		for column := columnA; column <= columnH; column++ {
@@ -141,6 +162,9 @@ func newGame() *Game {
 }
 
 func main() {
-	game := newGame()
-	game.play(newMove("e2", "e4")).printBoard()
+	g := newGame()
+	g.printBoard()
+	for _, m := range g.legalMovesFrom(&Square{row1, columnC}) {
+		println(m.toString())
+	}
 }

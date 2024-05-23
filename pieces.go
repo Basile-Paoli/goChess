@@ -15,7 +15,7 @@ type Piece interface {
 	Color() Color
 	Type() PieceType
 	Symbol() string
-	LegalMoves(game *Game, row, column int) []Move
+	LegalMoves(game *Game, from *Square) []Move
 }
 type Pawn struct {
 	color Color
@@ -34,9 +34,46 @@ func (p Pawn) Symbol() string {
 	return "♙"
 }
 
-func (p Pawn) LegalMoves(game *Game, row, column int) []Move {
-	//TODO
-	return make([]Move, 0)
+func (p Pawn) LegalMoves(game *Game, from *Square) []Move {
+	moves := make([]Move, 0)
+	row, column := from[0], from[1]
+	if p.color == White {
+		if row == row8 {
+			return moves
+		}
+		if game.board[row+1][column] == nil {
+			moves = append(moves, Move{from, &Square{row + 1, column}})
+
+			if row == row2 && game.board[row+2][column] == nil {
+				moves = append(moves, Move{from, &Square{row + 2, column}})
+			}
+		}
+		if column > columnA && game.board[row+1][column-1] != nil && game.board[row+1][column-1].Color() == Black {
+			moves = append(moves, Move{from, &Square{row + 1, column - 1}})
+		}
+		if column < columnH && game.board[row+1][column+1] != nil && game.board[row+1][column+1].Color() == Black {
+			moves = append(moves, Move{from, &Square{row + 1, column + 1}})
+		}
+	}
+	if p.color == Black {
+		if row == row1 {
+			return moves
+		}
+		if game.board[row-1][column] == nil {
+			moves = append(moves, Move{from, &Square{row - 1, column}})
+			if row == row7 && game.board[row-2][column] == nil {
+				moves = append(moves, Move{from, &Square{row - 2, column}})
+			}
+		}
+		if column > columnA && game.board[row-1][column-1] != nil && game.board[row-1][column-1].Color() == White {
+			moves = append(moves, Move{from, &Square{row - 1, column - 1}})
+		}
+		if column < columnH && game.board[row-1][column+1] != nil && game.board[row-1][column+1].Color() == White {
+			moves = append(moves, Move{from, &Square{row - 1, column + 1}})
+		}
+
+	}
+	return moves
 }
 
 type Knight struct {
@@ -55,9 +92,28 @@ func (k Knight) Symbol() string {
 	}
 	return "♘"
 }
-func (k Knight) LegalMoves(game *Game, row, column int) []Move {
-	//TODO
-	return make([]Move, 0)
+func (k Knight) LegalMoves(game *Game, from *Square) []Move {
+	moves := make([]Move, 0)
+	row, column := from[0], from[1]
+	possibleSquares := []Square{
+		{row + 2, column + 1},
+		{row + 2, column - 1},
+		{row + 1, column + 2},
+		{row + 1, column - 2},
+		{row - 2, column + 1},
+		{row - 2, column - 1},
+		{row - 1, column + 2},
+		{row - 1, column - 2},
+	}
+	for _, square := range possibleSquares {
+		row, column := square[0], square[1]
+		if row1 <= row && row <= row8 && columnA <= column && column <= columnH {
+			if game.board[row][column] == nil || game.board[row][column].Color() != k.color {
+				moves = append(moves, Move{from, &square})
+			}
+		}
+	}
+	return moves
 }
 
 type Bishop struct {
@@ -77,9 +133,27 @@ func (b Bishop) Symbol() string {
 	return "♗"
 }
 
-func (b Bishop) LegalMoves(game *Game, row, column int) []Move {
-	//TODO
-	return make([]Move, 0)
+func (b Bishop) LegalMoves(game *Game, from *Square) []Move {
+	moves := make([]Move, 0)
+	row, column := from[0], from[1]
+	for _, direction := range [][]int{{1, 1}, {1, -1}, {-1, 1}, {-1, -1}} {
+		destRow, destColumn := row+direction[0], column+direction[1]
+		for row1 <= destRow && destRow <= row8 && columnA <= destColumn && destColumn <= columnH {
+			if game.board[destRow][destColumn] == nil {
+				moves = append(moves, Move{from, &Square{destRow, destColumn}})
+			} else {
+				if game.board[destRow][destColumn].Color() != b.color {
+					moves = append(moves, Move{from, &Square{destRow, destColumn}})
+				}
+				break
+			}
+			destRow += direction[0]
+			destColumn += direction[1]
+		}
+
+	}
+
+	return moves
 }
 
 type Rook struct {
@@ -98,9 +172,25 @@ func (r Rook) Symbol() string {
 	}
 	return "♖"
 }
-func (r Rook) LegalMoves(game *Game, row, column int) []Move {
-	//TODO
-	return make([]Move, 0)
+func (r Rook) LegalMoves(game *Game, from *Square) []Move {
+	moves := make([]Move, 0)
+	row, column := from[0], from[1]
+	for _, direction := range [][]int{{1, 0}, {0, 1}, {-1, 0}, {0, -1}} {
+		destRow, destColumn := row+direction[0], column+direction[1]
+		for row1 <= destRow && destRow <= row8 && columnA <= destColumn && destColumn <= columnH {
+			if game.board[destRow][destColumn] == nil {
+				moves = append(moves, Move{from, &Square{destRow, destColumn}})
+			} else {
+				if game.board[destRow][destColumn].Color() != r.color {
+					moves = append(moves, Move{from, &Square{destRow, destColumn}})
+				}
+				break
+			}
+			destRow += direction[0]
+			destColumn += direction[1]
+		}
+	}
+	return moves
 }
 
 type Queen struct {
@@ -120,9 +210,25 @@ func (q Queen) Symbol() string {
 	return "♕"
 }
 
-func (q Queen) LegalMoves(game *Game, row, column int) []Move {
-	//TODO
-	return make([]Move, 0)
+func (q Queen) LegalMoves(game *Game, from *Square) []Move {
+	moves := make([]Move, 0)
+	row, column := from[0], from[1]
+	for _, direction := range [][]int{{1, 1}, {1, -1}, {-1, 1}, {-1, -1}, {1, 0}, {0, 1}, {-1, 0}, {0, -1}} {
+		destRow, destColumn := row+direction[0], column+direction[1]
+		for row1 <= destRow && destRow <= row8 && columnA <= destColumn && destColumn <= columnH {
+			if game.board[destRow][destColumn] == nil {
+				moves = append(moves, Move{from, &Square{destRow, destColumn}})
+			} else {
+				if game.board[destRow][destColumn].Color() != q.color {
+					moves = append(moves, Move{from, &Square{destRow, destColumn}})
+				}
+				break
+			}
+			destRow += direction[0]
+			destColumn += direction[1]
+		}
+	}
+	return moves
 }
 
 type King struct {
@@ -141,7 +247,16 @@ func (k King) Symbol() string {
 	}
 	return "♔"
 }
-func (k King) LegalMoves(game *Game, row, column int) []Move {
-	//TODO
-	return make([]Move, 0)
+func (k King) LegalMoves(game *Game, from *Square) []Move {
+	moves := make([]Move, 0)
+	row, column := from[0], from[1]
+	for _, direction := range [][]int{{1, 1}, {1, -1}, {-1, 1}, {-1, -1}, {1, 0}, {0, 1}, {-1, 0}, {0, -1}} {
+		destRow, destColumn := row+direction[0], column+direction[1]
+		if row1 <= destRow && destRow <= row8 && columnA <= destColumn && destColumn <= columnH {
+			if game.board[destRow][destColumn] == nil || game.board[destRow][destColumn].Color() != k.color {
+				moves = append(moves, Move{from, &Square{destRow, destColumn}})
+			}
+		}
+	}
+	return moves
 }
