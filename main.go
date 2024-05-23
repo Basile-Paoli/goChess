@@ -1,5 +1,7 @@
 package main
 
+import "fmt"
+
 const (
 	row1 = iota
 	row2
@@ -69,8 +71,16 @@ func newMove(start string, end string) *Move {
 }
 
 type Game struct {
-	board  [8][8]Piece
-	toPlay Color
+	board        [8][8]Piece
+	toPlay       Color
+	castleRights [2][2]bool
+}
+
+func (g *Game) canShortCastle(color Color) bool {
+	return g.castleRights[color][0]
+}
+func (g *Game) canLongCastle(color Color) bool {
+	return g.castleRights[color][1]
 }
 
 func (g *Game) isLegal(move *Move) bool {
@@ -99,6 +109,32 @@ func (g *Game) play(move *Move) *Game {
 	if !g.isLegal(move) {
 		return g
 	}
+	if g.board[move.From[0]][move.From[1]].Type() == KING {
+		g.castleRights[g.toPlay][0] = false
+		g.castleRights[g.toPlay][1] = false
+		if move.From[1]-move.To[1] == 2 {
+			g.board[move.From[0]][columnD] = g.board[move.From[0]][columnA]
+			g.board[move.From[0]][columnA] = nil
+
+		} else if move.From[1]-move.To[1] == -2 {
+			g.board[move.From[0]][columnF] = g.board[move.From[0]][columnH]
+			g.board[move.From[0]][columnH] = nil
+
+		}
+	}
+	if move.From[1] == columnA && move.From[0] == row1 {
+		g.castleRights[White][1] = false
+	}
+	if move.From[1] == columnH && move.From[0] == row1 {
+		g.castleRights[White][0] = false
+	}
+	if move.From[1] == columnA && move.From[0] == row8 {
+		g.castleRights[Black][1] = false
+	}
+	if move.From[1] == columnH && move.From[0] == row8 {
+		g.castleRights[Black][0] = false
+	}
+
 	g.board[move.To[0]][move.To[1]] = g.board[move.From[0]][move.From[1]]
 	g.board[move.From[0]][move.From[1]] = nil
 	g.switchPlayer()
@@ -110,13 +146,23 @@ func (g *Game) move(moveStr string) *Game {
 	}
 	return g.play(newMove(moveStr[:2], moveStr[2:]))
 }
-
 func (g *Game) legalMovesFrom(square *Square) []Move {
 	piece := g.board[square[0]][square[1]]
-	if piece == nil {
+	if piece == nil || piece.Color() != g.toPlay {
 		return make([]Move, 0)
 	}
 	return piece.LegalMoves(g, square)
+}
+
+func (g *Game) legalMoves() []Move {
+	moves := make([]Move, 0)
+	for row := row1; row <= row8; row++ {
+		for column := columnA; column <= columnH; column++ {
+			square := &Square{row, column}
+			moves = append(moves, g.legalMovesFrom(square)...)
+		}
+	}
+	return moves
 }
 
 func (g *Game) printBoard() {
@@ -158,13 +204,23 @@ func newGame() *Game {
 	game.board[row8][columnF] = &Bishop{Black}
 	game.board[row8][columnG] = &Knight{Black}
 	game.board[row8][columnH] = &Rook{Black}
+	game.toPlay = White
+	game.castleRights = [2][2]bool{{true, true}, {true, true}}
 	return game
 }
 
 func main() {
 	g := newGame()
-	g.printBoard()
-	for _, m := range g.legalMovesFrom(&Square{row1, columnC}) {
-		println(m.toString())
+	for {
+		g.printBoard()
+		println()
+		for _, move := range g.legalMoves() {
+			print(move.toString(), " ")
+		}
+		println()
+		println("Enter your move:")
+		var move string
+		_, _ = fmt.Scanln(&move)
+		g.move(move)
 	}
 }

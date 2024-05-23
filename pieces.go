@@ -258,5 +258,15 @@ func (k King) LegalMoves(game *Game, from *Square) []Move {
 			}
 		}
 	}
+	if game.castleRights[k.color][1] {
+		if game.board[row][columnB] == nil && game.board[row][columnC] == nil && game.board[row][columnD] == nil {
+			moves = append(moves, Move{from, &Square{row, columnC}})
+		}
+	}
+	if game.castleRights[k.color][0] {
+		if game.board[row][columnG] == nil && game.board[row][columnF] == nil {
+			moves = append(moves, Move{from, &Square{row, columnG}})
+		}
+	}
 	return moves
 }
