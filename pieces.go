@@ -16,6 +16,7 @@ type Piece interface {
 	Type() PieceType
 	Symbol() string
 	LegalMoves(game *Game, from *Square) []Move
+	Attacks(game *Game, from *Square) []Square
 }
 type Pawn struct {
 	color Color
@@ -36,6 +37,9 @@ func (p Pawn) Symbol() string {
 
 func (p Pawn) LegalMoves(game *Game, from *Square) []Move {
 	moves := make([]Move, 0)
+	if from == nil {
+		return moves
+	}
 	row, column := from[0], from[1]
 	if p.color == White {
 		if row == row8 {
@@ -73,7 +77,32 @@ func (p Pawn) LegalMoves(game *Game, from *Square) []Move {
 		}
 
 	}
+	moves = filterMovesThatLoseKing(game, moves, p.color)
 	return moves
+}
+func (p Pawn) Attacks(game *Game, from *Square) []Square {
+	attacks := make([]Square, 0)
+	if from == nil {
+		return attacks
+	}
+	row, column := from[0], from[1]
+	if p.color == White {
+		if column > columnA {
+			attacks = append(attacks, Square{row + 1, column - 1})
+		}
+		if column < columnH {
+			attacks = append(attacks, Square{row + 1, column + 1})
+		}
+	}
+	if p.color == Black {
+		if column > columnA {
+			attacks = append(attacks, Square{row - 1, column - 1})
+		}
+		if column < columnH {
+			attacks = append(attacks, Square{row - 1, column + 1})
+		}
+	}
+	return attacks
 }
 
 type Knight struct {
@@ -92,8 +121,11 @@ func (k Knight) Symbol() string {
 	}
 	return "♘"
 }
-func (k Knight) LegalMoves(game *Game, from *Square) []Move {
-	moves := make([]Move, 0)
+func (k Knight) Attacks(game *Game, from *Square) []Square {
+	attacks := make([]Square, 0)
+	if from == nil {
+		return attacks
+	}
 	row, column := from[0], from[1]
 	possibleSquares := []Square{
 		{row + 2, column + 1},
@@ -108,11 +140,21 @@ func (k Knight) LegalMoves(game *Game, from *Square) []Move {
 	for _, square := range possibleSquares {
 		row, column := square[0], square[1]
 		if row1 <= row && row <= row8 && columnA <= column && column <= columnH {
-			if game.board[row][column] == nil || game.board[row][column].Color() != k.color {
-				moves = append(moves, Move{from, &square})
-			}
+			attacks = append(attacks, square)
 		}
 	}
+	return attacks
+
+}
+func (k Knight) LegalMoves(game *Game, from *Square) []Move {
+	moves := make([]Move, 0)
+	attacks := k.Attacks(game, from)
+	for _, square := range attacks {
+		if game.board[square[0]][square[1]] == nil || game.board[square[0]][square[1]].Color() != k.color {
+			moves = append(moves, Move{from, &square})
+		}
+	}
+	moves = filterMovesThatLoseKing(game, moves, k.color)
 	return moves
 }
 
@@ -133,26 +175,34 @@ func (b Bishop) Symbol() string {
 	return "♗"
 }
 
-func (b Bishop) LegalMoves(game *Game, from *Square) []Move {
-	moves := make([]Move, 0)
+func (b Bishop) Attacks(game *Game, from *Square) []Square {
+	attacks := make([]Square, 0)
+	if from == nil {
+		return attacks
+	}
 	row, column := from[0], from[1]
 	for _, direction := range [][]int{{1, 1}, {1, -1}, {-1, 1}, {-1, -1}} {
 		destRow, destColumn := row+direction[0], column+direction[1]
 		for row1 <= destRow && destRow <= row8 && columnA <= destColumn && destColumn <= columnH {
-			if game.board[destRow][destColumn] == nil {
-				moves = append(moves, Move{from, &Square{destRow, destColumn}})
-			} else {
-				if game.board[destRow][destColumn].Color() != b.color {
-					moves = append(moves, Move{from, &Square{destRow, destColumn}})
-				}
+			attacks = append(attacks, Square{destRow, destColumn})
+			if game.board[destRow][destColumn] != nil {
 				break
 			}
 			destRow += direction[0]
 			destColumn += direction[1]
 		}
-
 	}
-
+	return attacks
+}
+func (b Bishop) LegalMoves(game *Game, from *Square) []Move {
+	moves := make([]Move, 0)
+	attacks := b.Attacks(game, from)
+	for _, square := range attacks {
+		if game.board[square[0]][square[1]] == nil || game.board[square[0]][square[1]].Color() != b.color {
+			moves = append(moves, Move{from, &square})
+		}
+	}
+	moves = filterMovesThatLoseKing(game, moves, b.color)
 	return moves
 }
 
@@ -172,24 +222,34 @@ func (r Rook) Symbol() string {
 	}
 	return "♖"
 }
-func (r Rook) LegalMoves(game *Game, from *Square) []Move {
-	moves := make([]Move, 0)
+func (r Rook) Attacks(game *Game, from *Square) []Square {
+	attacks := make([]Square, 0)
+	if from == nil {
+		return attacks
+	}
 	row, column := from[0], from[1]
 	for _, direction := range [][]int{{1, 0}, {0, 1}, {-1, 0}, {0, -1}} {
 		destRow, destColumn := row+direction[0], column+direction[1]
 		for row1 <= destRow && destRow <= row8 && columnA <= destColumn && destColumn <= columnH {
-			if game.board[destRow][destColumn] == nil {
-				moves = append(moves, Move{from, &Square{destRow, destColumn}})
-			} else {
-				if game.board[destRow][destColumn].Color() != r.color {
-					moves = append(moves, Move{from, &Square{destRow, destColumn}})
-				}
+			attacks = append(attacks, Square{destRow, destColumn})
+			if game.board[destRow][destColumn] != nil {
 				break
 			}
 			destRow += direction[0]
 			destColumn += direction[1]
 		}
 	}
+	return attacks
+}
+func (r Rook) LegalMoves(game *Game, from *Square) []Move {
+	moves := make([]Move, 0)
+	attacks := r.Attacks(game, from)
+	for _, square := range attacks {
+		if game.board[square[0]][square[1]] == nil || game.board[square[0]][square[1]].Color() != r.color {
+			moves = append(moves, Move{from, &square})
+		}
+	}
+	filterMovesThatLoseKing(game, moves, r.color)
 	return moves
 }
 
@@ -210,24 +270,34 @@ func (q Queen) Symbol() string {
 	return "♕"
 }
 
-func (q Queen) LegalMoves(game *Game, from *Square) []Move {
-	moves := make([]Move, 0)
+func (q Queen) Attacks(game *Game, from *Square) []Square {
+	attacks := make([]Square, 0)
+	if from == nil {
+		return attacks
+	}
 	row, column := from[0], from[1]
 	for _, direction := range [][]int{{1, 1}, {1, -1}, {-1, 1}, {-1, -1}, {1, 0}, {0, 1}, {-1, 0}, {0, -1}} {
 		destRow, destColumn := row+direction[0], column+direction[1]
 		for row1 <= destRow && destRow <= row8 && columnA <= destColumn && destColumn <= columnH {
-			if game.board[destRow][destColumn] == nil {
-				moves = append(moves, Move{from, &Square{destRow, destColumn}})
-			} else {
-				if game.board[destRow][destColumn].Color() != q.color {
-					moves = append(moves, Move{from, &Square{destRow, destColumn}})
-				}
+			attacks = append(attacks, Square{destRow, destColumn})
+			if game.board[destRow][destColumn] != nil {
 				break
 			}
 			destRow += direction[0]
 			destColumn += direction[1]
 		}
 	}
+	return attacks
+}
+func (q Queen) LegalMoves(game *Game, from *Square) []Move {
+	moves := make([]Move, 0)
+	attacks := q.Attacks(game, from)
+	for _, square := range attacks {
+		if game.board[square[0]][square[1]] == nil || game.board[square[0]][square[1]].Color() != q.color {
+			moves = append(moves, Move{from, &square})
+		}
+	}
+	moves = filterMovesThatLoseKing(game, moves, q.color)
 	return moves
 }
 
@@ -247,26 +317,54 @@ func (k King) Symbol() string {
 	}
 	return "♔"
 }
-func (k King) LegalMoves(game *Game, from *Square) []Move {
-	moves := make([]Move, 0)
+func (k King) Attacks(game *Game, from *Square) []Square {
+	attacks := make([]Square, 0)
+	if from == nil {
+		return attacks
+	}
 	row, column := from[0], from[1]
 	for _, direction := range [][]int{{1, 1}, {1, -1}, {-1, 1}, {-1, -1}, {1, 0}, {0, 1}, {-1, 0}, {0, -1}} {
 		destRow, destColumn := row+direction[0], column+direction[1]
 		if row1 <= destRow && destRow <= row8 && columnA <= destColumn && destColumn <= columnH {
-			if game.board[destRow][destColumn] == nil || game.board[destRow][destColumn].Color() != k.color {
-				moves = append(moves, Move{from, &Square{destRow, destColumn}})
-			}
+			attacks = append(attacks, Square{destRow, destColumn})
 		}
 	}
-	if game.castleRights[k.color][1] {
-		if game.board[row][columnB] == nil && game.board[row][columnC] == nil && game.board[row][columnD] == nil {
+	return attacks
+}
+func (k King) LegalMoves(game *Game, from *Square) []Move {
+	moves := make([]Move, 0)
+	if from == nil {
+		return moves
+	}
+	attacks := k.Attacks(game, from)
+	attacked := game.SquaresAttacked(1 - k.color)
+	for _, square := range attacks {
+		if game.board[square[0]][square[1]] == nil || game.board[square[0]][square[1]].Color() != k.color && !attacked[Square{square[0], square[1]}.ToString()] {
+			moves = append(moves, Move{from, &square})
+		}
+	}
+
+	row := from[0]
+
+	if game.CanShortCastle(k.color) {
+		if game.board[row][columnB] == nil && game.board[row][columnC] == nil && game.board[row][columnD] == nil && !attacked[Square{row, columnC}.ToString()] && !attacked[Square{row, columnD}.ToString()] && !attacked[Square{row, columnE}.ToString()] {
 			moves = append(moves, Move{from, &Square{row, columnC}})
 		}
 	}
-	if game.castleRights[k.color][0] {
-		if game.board[row][columnG] == nil && game.board[row][columnF] == nil {
+	if game.CanLongCastle(k.color) {
+		if game.board[row][columnG] == nil && game.board[row][columnF] == nil && !attacked[Square{row, columnF}.ToString()] && !attacked[Square{row, columnG}.ToString()] && !attacked[Square{row, columnE}.ToString()] {
 			moves = append(moves, Move{from, &Square{row, columnG}})
 		}
 	}
+	moves = filterMovesThatLoseKing(game, moves, k.color)
+	return moves
+}
+
+func filterMovesThatLoseKing(game *Game, moves []Move, color Color) []Move {
+	moves = filter(moves, func(move Move) bool {
+		g := game.Copy()
+		g.playWithoutChecking(&move)
+		return !g.IsCheck(color)
+	})
 	return moves
 }
