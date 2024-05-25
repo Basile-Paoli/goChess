@@ -52,6 +52,15 @@ func (p Pawn) LegalMoves(game *Game, from *Square) []Move {
 				moves = append(moves, Move{from, &Square{row + 2, column}})
 			}
 		}
+		//en passant
+		if row == row5 {
+			if column > columnA && game.board[row][column-1] != nil && game.board[row][column-1].Type() == PAWN && game.lastMove != nil && game.lastMove.From[0] == row+2 && game.lastMove.To[0] == row && game.lastMove.To[1] == column-1 {
+				moves = append(moves, Move{from, &Square{row + 1, column - 1}})
+			}
+			if column < columnH && game.board[row][column+1] != nil && game.board[row][column+1].Type() == PAWN && game.lastMove != nil && game.lastMove.From[0] == row+2 && game.lastMove.To[0] == row && game.lastMove.To[1] == column+1 {
+				moves = append(moves, Move{from, &Square{row + 1, column + 1}})
+			}
+		}
 		if column > columnA && game.board[row+1][column-1] != nil && game.board[row+1][column-1].Color() == Black {
 			moves = append(moves, Move{from, &Square{row + 1, column - 1}})
 		}
@@ -67,6 +76,15 @@ func (p Pawn) LegalMoves(game *Game, from *Square) []Move {
 			moves = append(moves, Move{from, &Square{row - 1, column}})
 			if row == row7 && game.board[row-2][column] == nil {
 				moves = append(moves, Move{from, &Square{row - 2, column}})
+			}
+		}
+		//en passant
+		if row == row4 {
+			if column > columnA && game.board[row][column-1] != nil && game.board[row][column-1].Type() == PAWN && game.lastMove != nil && game.lastMove.From[0] == row-2 && game.lastMove.To[0] == row && game.lastMove.To[1] == column-1 {
+				moves = append(moves, Move{from, &Square{row - 1, column - 1}})
+			}
+			if column < columnH && game.board[row][column+1] != nil && game.board[row][column+1].Type() == PAWN && game.lastMove != nil && game.lastMove.From[0] == row-2 && game.lastMove.To[0] == row && game.lastMove.To[1] == column+1 {
+				moves = append(moves, Move{from, &Square{row - 1, column + 1}})
 			}
 		}
 		if column > columnA && game.board[row-1][column-1] != nil && game.board[row-1][column-1].Color() == White {

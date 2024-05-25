@@ -75,6 +75,7 @@ type Game struct {
 	toPlay Color
 	// castleRights stores the rights to castle for each player. The first index is the color of the player and the second index is the side of the board. The first element is for short castling and the second element is for long castling.
 	castleRights [2][2]bool
+	lastMove     *Move
 }
 
 func (g *Game) CanShortCastle(color Color) bool {
@@ -117,10 +118,15 @@ func (g *Game) Play(move *Move) *Game {
 	if piece.Type() == KING && (move.From[1]-move.To[1] == 2 || move.From[1]-move.To[1] == -2) {
 		g.castle(move)
 	}
+	if piece.Type() == PAWN && move.To[1] != move.From[1] && g.board[move.To[0]][move.To[1]] == nil {
+		g.board[move.From[0]][move.To[1]] = nil
+
+	}
 
 	g.board[move.To[0]][move.To[1]] = piece
 	g.board[move.From[0]][move.From[1]] = nil
 	g.switchPlayer()
+	g.lastMove = move
 	return g
 }
 func (g *Game) playWithoutChecking(move *Move) *Game {
