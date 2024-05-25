@@ -45,53 +45,85 @@ func (p Pawn) LegalMoves(game *Game, from *Square) []Move {
 		if row == row8 {
 			return moves
 		}
-		if game.board[row+1][column] == nil {
-			moves = append(moves, Move{from, &Square{row + 1, column}})
+		if row == row7 && game.board[row+1][column] == nil {
+			for i := KNIGHT; i <= QUEEN; i++ {
+				moves = append(moves, Move{From: from, To: &Square{row + 1, column}, PromotionType: &i})
+			}
+		} else if game.board[row+1][column] == nil {
+			moves = append(moves, Move{From: from, To: &Square{row + 1, column}})
 
 			if row == row2 && game.board[row+2][column] == nil {
-				moves = append(moves, Move{from, &Square{row + 2, column}})
+				moves = append(moves, Move{From: from, To: &Square{row + 2, column}})
 			}
 		}
 		//en passant
 		if row == row5 {
 			if column > columnA && game.board[row][column-1] != nil && game.board[row][column-1].Type() == PAWN && game.lastMove != nil && game.lastMove.From[0] == row+2 && game.lastMove.To[0] == row && game.lastMove.To[1] == column-1 {
-				moves = append(moves, Move{from, &Square{row + 1, column - 1}})
+				moves = append(moves, Move{From: from, To: &Square{row + 1, column - 1}})
 			}
 			if column < columnH && game.board[row][column+1] != nil && game.board[row][column+1].Type() == PAWN && game.lastMove != nil && game.lastMove.From[0] == row+2 && game.lastMove.To[0] == row && game.lastMove.To[1] == column+1 {
-				moves = append(moves, Move{from, &Square{row + 1, column + 1}})
+				moves = append(moves, Move{From: from, To: &Square{row + 1, column + 1}})
 			}
 		}
 		if column > columnA && game.board[row+1][column-1] != nil && game.board[row+1][column-1].Color() == Black {
-			moves = append(moves, Move{from, &Square{row + 1, column - 1}})
+			if row == row7 {
+				for i := KNIGHT; i <= QUEEN; i++ {
+					moves = append(moves, Move{From: from, To: &Square{row + 1, column - 1}, PromotionType: &i})
+				}
+			} else {
+				moves = append(moves, Move{From: from, To: &Square{row + 1, column - 1}})
+			}
 		}
 		if column < columnH && game.board[row+1][column+1] != nil && game.board[row+1][column+1].Color() == Black {
-			moves = append(moves, Move{from, &Square{row + 1, column + 1}})
+			if row == row7 {
+				for i := KNIGHT; i <= QUEEN; i++ {
+					moves = append(moves, Move{From: from, To: &Square{row + 1, column + 1}, PromotionType: &i})
+				}
+			} else {
+				moves = append(moves, Move{From: from, To: &Square{row + 1, column + 1}})
+			}
 		}
 	}
 	if p.color == Black {
 		if row == row1 {
 			return moves
 		}
-		if game.board[row-1][column] == nil {
-			moves = append(moves, Move{from, &Square{row - 1, column}})
+		if row == row2 && game.board[row-1][column] == nil {
+			for i := KNIGHT; i <= QUEEN; i++ {
+				moves = append(moves, Move{From: from, To: &Square{row - 1, column}, PromotionType: &i})
+			}
+		} else if game.board[row-1][column] == nil {
+			moves = append(moves, Move{From: from, To: &Square{row - 1, column}})
 			if row == row7 && game.board[row-2][column] == nil {
-				moves = append(moves, Move{from, &Square{row - 2, column}})
+				moves = append(moves, Move{From: from, To: &Square{row - 2, column}})
 			}
 		}
 		//en passant
 		if row == row4 {
 			if column > columnA && game.board[row][column-1] != nil && game.board[row][column-1].Type() == PAWN && game.lastMove != nil && game.lastMove.From[0] == row-2 && game.lastMove.To[0] == row && game.lastMove.To[1] == column-1 {
-				moves = append(moves, Move{from, &Square{row - 1, column - 1}})
+				moves = append(moves, Move{From: from, To: &Square{row - 1, column - 1}})
 			}
 			if column < columnH && game.board[row][column+1] != nil && game.board[row][column+1].Type() == PAWN && game.lastMove != nil && game.lastMove.From[0] == row-2 && game.lastMove.To[0] == row && game.lastMove.To[1] == column+1 {
-				moves = append(moves, Move{from, &Square{row - 1, column + 1}})
+				moves = append(moves, Move{From: from, To: &Square{row - 1, column + 1}})
 			}
 		}
 		if column > columnA && game.board[row-1][column-1] != nil && game.board[row-1][column-1].Color() == White {
-			moves = append(moves, Move{from, &Square{row - 1, column - 1}})
+			if row == row2 {
+				for i := KNIGHT; i <= QUEEN; i++ {
+					moves = append(moves, Move{From: from, To: &Square{row - 1, column - 1}, PromotionType: &i})
+				}
+			} else {
+				moves = append(moves, Move{From: from, To: &Square{row - 1, column - 1}})
+			}
 		}
 		if column < columnH && game.board[row-1][column+1] != nil && game.board[row-1][column+1].Color() == White {
-			moves = append(moves, Move{from, &Square{row - 1, column + 1}})
+			if row == row2 {
+				for i := KNIGHT; i <= QUEEN; i++ {
+					moves = append(moves, Move{From: from, To: &Square{row - 1, column + 1}, PromotionType: &i})
+				}
+			} else {
+				moves = append(moves, Move{From: from, To: &Square{row - 1, column + 1}})
+			}
 		}
 
 	}
@@ -169,7 +201,7 @@ func (k Knight) LegalMoves(game *Game, from *Square) []Move {
 	attacks := k.Attacks(game, from)
 	for _, square := range attacks {
 		if game.board[square[0]][square[1]] == nil || game.board[square[0]][square[1]].Color() != k.color {
-			moves = append(moves, Move{from, &square})
+			moves = append(moves, Move{From: from, To: &square})
 		}
 	}
 	moves = filterMovesThatLoseKing(game, moves, k.color)
@@ -217,7 +249,7 @@ func (b Bishop) LegalMoves(game *Game, from *Square) []Move {
 	attacks := b.Attacks(game, from)
 	for _, square := range attacks {
 		if game.board[square[0]][square[1]] == nil || game.board[square[0]][square[1]].Color() != b.color {
-			moves = append(moves, Move{from, &square})
+			moves = append(moves, Move{From: from, To: &square})
 		}
 	}
 	moves = filterMovesThatLoseKing(game, moves, b.color)
@@ -264,7 +296,7 @@ func (r Rook) LegalMoves(game *Game, from *Square) []Move {
 	attacks := r.Attacks(game, from)
 	for _, square := range attacks {
 		if game.board[square[0]][square[1]] == nil || game.board[square[0]][square[1]].Color() != r.color {
-			moves = append(moves, Move{from, &square})
+			moves = append(moves, Move{From: from, To: &square})
 		}
 	}
 	filterMovesThatLoseKing(game, moves, r.color)
@@ -312,7 +344,7 @@ func (q Queen) LegalMoves(game *Game, from *Square) []Move {
 	attacks := q.Attacks(game, from)
 	for _, square := range attacks {
 		if game.board[square[0]][square[1]] == nil || game.board[square[0]][square[1]].Color() != q.color {
-			moves = append(moves, Move{from, &square})
+			moves = append(moves, Move{From: from, To: &square})
 		}
 	}
 	moves = filterMovesThatLoseKing(game, moves, q.color)
@@ -358,7 +390,7 @@ func (k King) LegalMoves(game *Game, from *Square) []Move {
 	attacked := game.SquaresAttacked(1 - k.color)
 	for _, square := range attacks {
 		if game.board[square[0]][square[1]] == nil || game.board[square[0]][square[1]].Color() != k.color && !attacked[Square{square[0], square[1]}.ToString()] {
-			moves = append(moves, Move{from, &square})
+			moves = append(moves, Move{From: from, To: &square})
 		}
 	}
 
@@ -366,12 +398,12 @@ func (k King) LegalMoves(game *Game, from *Square) []Move {
 
 	if game.CanShortCastle(k.color) {
 		if game.board[row][columnB] == nil && game.board[row][columnC] == nil && game.board[row][columnD] == nil && !attacked[Square{row, columnC}.ToString()] && !attacked[Square{row, columnD}.ToString()] && !attacked[Square{row, columnE}.ToString()] {
-			moves = append(moves, Move{from, &Square{row, columnC}})
+			moves = append(moves, Move{From: from, To: &Square{row, columnC}})
 		}
 	}
 	if game.CanLongCastle(k.color) {
 		if game.board[row][columnG] == nil && game.board[row][columnF] == nil && !attacked[Square{row, columnF}.ToString()] && !attacked[Square{row, columnG}.ToString()] && !attacked[Square{row, columnE}.ToString()] {
-			moves = append(moves, Move{from, &Square{row, columnG}})
+			moves = append(moves, Move{From: from, To: &Square{row, columnG}})
 		}
 	}
 	moves = filterMovesThatLoseKing(game, moves, k.color)

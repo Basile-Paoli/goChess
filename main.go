@@ -1,7 +1,5 @@
 package main
 
-import "fmt"
-
 const (
 	row1 = iota
 	row2
@@ -52,18 +50,39 @@ const (
 )
 
 type Move struct {
-	From *Square
-	To   *Square
+	From          *Square
+	To            *Square
+	PromotionType *PieceType
 }
 
 func (m Move) ToString() string {
+	if m.PromotionType != nil {
+		var symbol string
+		switch *m.PromotionType {
+		case QUEEN:
+			symbol = "Q"
+		case ROOK:
+			symbol = "R"
+		case BISHOP:
+			symbol = "B"
+		case KNIGHT:
+			symbol = "N"
+		default:
+			return ""
+		}
+		return m.From.ToString() + m.To.ToString() + symbol
+
+	}
 	return m.From.ToString() + m.To.ToString()
 }
 
-func NewMove(start string, end string) *Move {
+func NewMove(start string, end string, promotionType ...PieceType) *Move {
 	move := new(Move)
 	move.From = NewSquare(start)
 	move.To = NewSquare(end)
+	if len(promotionType) == 1 {
+		move.PromotionType = &promotionType[0]
+	}
 	if move.From == nil || move.To == nil {
 		return nil
 	}
@@ -120,7 +139,18 @@ func (g *Game) Play(move *Move) *Game {
 	}
 	if piece.Type() == PAWN && move.To[1] != move.From[1] && g.board[move.To[0]][move.To[1]] == nil {
 		g.board[move.From[0]][move.To[1]] = nil
-
+	}
+	if move.PromotionType != nil {
+		switch *move.PromotionType {
+		case QUEEN:
+			piece = &Queen{piece.Color()}
+		case ROOK:
+			piece = &Rook{piece.Color()}
+		case BISHOP:
+			piece = &Bishop{piece.Color()}
+		case KNIGHT:
+			piece = &Knight{piece.Color()}
+		}
 	}
 
 	g.board[move.To[0]][move.To[1]] = piece
@@ -176,10 +206,23 @@ func (g *Game) castle(move *Move) {
 	}
 }
 func (g *Game) Move(moveStr string) *Game {
-	if len(moveStr) != 4 {
-		return g
+	if len(moveStr) == 5 {
+		switch moveStr[4] {
+		case 'Q':
+			return g.Play(NewMove(moveStr[:2], moveStr[2:4], QUEEN))
+		case 'R':
+			return g.Play(NewMove(moveStr[:2], moveStr[2:4], ROOK))
+		case 'B':
+			return g.Play(NewMove(moveStr[:2], moveStr[2:4], BISHOP))
+		case 'N':
+			return g.Play(NewMove(moveStr[:2], moveStr[2:4], KNIGHT))
+		}
 	}
-	return g.Play(NewMove(moveStr[:2], moveStr[2:]))
+	if len(moveStr) == 4 {
+		return g.Play(NewMove(moveStr[:2], moveStr[2:]))
+
+	}
+	return g
 }
 func (g *Game) LegalMovesFrom(square *Square) []Move {
 	piece := g.board[square[0]][square[1]]
@@ -295,31 +338,34 @@ func NewGame() *Game {
 
 func main() {
 	g := NewGame()
-	for {
-		g.PrintBoard()
-		println()
-		if g.IsCheckmate() {
-			println("Checkmate")
-			break
-		}
-		if g.IsStalemate() {
-			println("Stalemate")
-			break
-		}
-		for _, move := range g.LegalMoves() {
-			print(move.ToString(), " ")
-		}
-		println()
-		var color string
-		if g.toPlay == White {
-			color = "White"
-		} else {
-			color = "Black"
-		}
-		fmt.Printf("%s to Play, enter your Move : \n", color)
-		var move string
-		fmt.Scanln(&move)
-		g.Move(move)
-	}
-	fmt.Scanln()
+	g.Move("f2f4").Move("g7g5").Move("f4g5").Move("g8f6").Move("g5g6").Move("e7e5").Move("g6g7").Move("e5e4").Move("g7h8Q")
+	g.PrintBoard()
+	//g := NewGame()
+	//for {
+	//	g.PrintBoard()
+	//	println()
+	//	if g.IsCheckmate() {
+	//		println("Checkmate")
+	//		break
+	//	}
+	//	if g.IsStalemate() {
+	//		println("Stalemate")
+	//		break
+	//	}
+	//	for _, move := range g.LegalMoves() {
+	//		print(move.ToString(), " ")
+	//	}
+	//	println()
+	//	var color string
+	//	if g.toPlay == White {
+	//		color = "White"
+	//	} else {
+	//		color = "Black"
+	//	}
+	//	fmt.Printf("%s to Play, enter your Move : \n", color)
+	//	var move string
+	//	fmt.Scanln(&move)
+	//	g.Move(move)
+	//}
+	//fmt.Scanln()
 }
